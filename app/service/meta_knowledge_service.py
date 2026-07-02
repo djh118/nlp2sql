@@ -212,7 +212,10 @@ class MetaKnowledgeService:
         meta_config: MetaConfig = load_config(MetaConfig, config_file)
         logger.info('加载元数据配置文件')
         if meta_config.tables:
-            # 2.保存表信息到meta数据库
+            # 2.清空旧数据
+            async with self.meta_repository.session.begin():
+                await self.meta_repository.clean_all()
+            # 3.保存表信息到meta数据库
             table_infos, column_infos = await self._save_tables_to_meta_db(meta_config.tables)
             logger.info('保存表信息和字段信息到meta数据库')
             # 3.同步字段信息到qdrant

@@ -14,6 +14,12 @@ class MetaMySQLRepository:
     async def save_table_infos(self, table_infos: list[TableInfoMySQL]):
         self.session.add_all(table_infos)
 
+    async def clean_all(self):
+        await self.session.execute(text("DELETE FROM column_metric"))
+        await self.session.execute(text("DELETE FROM metric_info"))
+        await self.session.execute(text("DELETE FROM column_info"))
+        await self.session.execute(text("DELETE FROM table_info"))
+
     async def save_column_infos(self, column_infos: list[ColumnInfoMySQL]):
         self.session.add_all(column_infos)
 

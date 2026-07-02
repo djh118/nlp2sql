@@ -43,6 +43,9 @@ class DBInfoState(TypedDict):
 class DataAgentState(TypedDict):
     query: str  # 查询
 
+    intent: str  # 意图分类: data_query / greeting / admin / out_of_domain / ddl_dml
+    direct_response: str  # 非查询操作的纯文本回复
+
     keywords: list[str]  # 关键词列表，由query分词和LLM生成得到，用于召回信息
     retrieved_metrics: list[MetricInfoQdrant]  # 召回的指标信息
     retrieved_columns: list[ColumnInfoQdrant]  # 召回的字段信息

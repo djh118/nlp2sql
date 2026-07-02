@@ -3,8 +3,10 @@ import asyncio
 from langgraph.constants import START, END
 from langgraph.graph import StateGraph
 
+from app.agent.callbacks import langfuse_handler
 from app.agent.context import DataAgentContext
 from app.agent.nodes.add_context import add_context
+from app.agent.nodes.classify_intent import classify_intent
 from app.agent.nodes.column_recall import column_recall
 from app.agent.nodes.correct_sql import correct_sql
 from app.agent.nodes.execute_sql import execute_sql
@@ -14,6 +16,7 @@ from app.agent.nodes.filter_table_info import filter_table_info
 from app.agent.nodes.generate_sql import generate_sql
 from app.agent.nodes.merge_retrieved_info import merge_retrieved_info
 from app.agent.nodes.metric_recall import metric_recall
+from app.agent.nodes.respond_direct import respond_direct
 from app.agent.nodes.validate_sql import validate_sql
 from app.agent.nodes.value_recall import value_recall
 from app.agent.state import DataAgentState
@@ -30,6 +33,17 @@ from app.repositories.qdrant.metric_repository_qdrant import MetricQdrantReposit
 
 graph_builder = StateGraph(state_schema=DataAgentState, context_schema=DataAgentContext)
 
+_INTENT_ROUTING = {
+    "data_query": "extract_keywords",
+    "greeting": "respond_direct",
+    "admin": "respond_direct",
+    "out_of_domain": "respond_direct",
+    "ddl_dml": "respond_direct",
+}
+
+graph_builder.add_node("classify_intent", classify_intent)
+graph_builder.add_node("respond_direct", respond_direct)
+
 graph_builder.add_node("extract_keywords", extract_keywords)
 graph_builder.add_node("column_recall", column_recall)
 graph_builder.add_node("value_recall", value_recall)
@@ -43,7 +57,9 @@ graph_builder.add_node("validate_sql", validate_sql)
 graph_builder.add_node("correct_sql", correct_sql)
 graph_builder.add_node("execute_sql", execute_sql)
 
-graph_builder.add_edge(START, "extract_keywords")
+graph_builder.add_edge(START, "classify_intent")
+graph_builder.add_conditional_edges("classify_intent", lambda state: _INTENT_ROUTING[state["intent"]])
+graph_builder.add_edge("respond_direct", END)
 graph_builder.add_edge("extract_keywords", "column_recall")
 graph_builder.add_edge("extract_keywords", "value_recall")
 graph_builder.add_edge("extract_keywords", "metric_recall")
@@ -91,7 +107,8 @@ async def main():
             meta_mysql_repository=meta_mysql_repository,
             dw_mysql_repository=dw_mysql_repository)
 
-        async for chunk in graph.astream(input=state, context=context, stream_mode="custom"):
+        config = {"callbacks": [langfuse_handler]} if langfuse_handler else {}
+        async for chunk in graph.astream(input=state, context=context, stream_mode="custom", config=config):
             print(chunk)
 
 

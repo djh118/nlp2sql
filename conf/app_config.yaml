@@ -12,15 +12,15 @@ logging:
 db_meta:
   host: localhost
   port: 3306
-  user: atguigu
-  password: Atguigu.123
+  user: root
+  password: 1234
   database: meta
 
 db_dw:
   host: localhost
   port: 3306
-  user: atguigu
-  password: Atguigu.123
+  user: root
+  password: 1234
   database: dw
 
 qdrant:
@@ -42,4 +42,10 @@ es:
 
 llm:
   model_name: deepseek-chat
-  api_key: sk-*****
+  api_key: sk-87d6425e08a444b09c4dcd032d1c5467
+
+langfuse:
+  enabled: true
+  secret_key: "sk-lf-dcb17211-933f-425e-b87a-0f63730b736a"
+  public_key: "pk-lf-c5fd8778-8e83-4765-8397-8e98facfc006"
+  host: https://cloud.langfuse.com

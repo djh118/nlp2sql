@@ -2,6 +2,7 @@ from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent.callbacks import langfuse_handler
 from app.agent.context import DataAgentContext
 from app.agent.state import DataAgentState
 from app.repositories.es.value_es_repository import ValueESRepository
@@ -37,5 +38,6 @@ class ChatService:
             embedding_client=self.embedding_client,
             meta_mysql_repository=self.meta_mysql_repository,
             dw_mysql_repository=self.dw_mysql_repository)
-        async for chunk in self.graph.astream(input=state, context=context, stream_mode="custom"):
+        config = {"callbacks": [langfuse_handler]} if langfuse_handler else {}
+        async for chunk in self.graph.astream(input=state, context=context, stream_mode="custom", config=config):
             yield chunk

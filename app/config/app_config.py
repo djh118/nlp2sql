@@ -64,6 +64,14 @@ class LLMConfig:
 
 
 @dataclass
+class LangFuseConfig:
+    enabled: bool
+    secret_key: str
+    public_key: str
+    host: str
+
+
+@dataclass
 class AppConfig:
     logging: LoggingConfig
     db_meta: DBConfig
@@ -72,6 +80,7 @@ class AppConfig:
     embedding: EmbeddingConfig
     es: ESConfig
     llm: LLMConfig
+    langfuse: LangFuseConfig
 
 
 config_file = Path(__file__).parents[2] / 'conf' / 'app_config.yaml'
