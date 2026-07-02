@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Agent</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: #f5f5f5; display: flex; justify-content: center; padding: 40px 20px; }
+.container { width: 100%; max-width: 960px; }
+h1 { font-size: 22px; margin-bottom: 16px; color: #333; }
+.input-bar { display: flex; gap: 8px; margin-bottom: 20px; }
+.input-bar input { flex: 1; padding: 10px 14px; font-size: 15px; border: 1px solid #d0d0d0; border-radius: 6px; outline: none; }
+.input-bar input:focus { border-color: #4a90d9; }
+.input-bar button { padding: 10px 24px; font-size: 15px; border: none; border-radius: 6px; cursor: pointer; }
+.btn-send { background: #4a90d9; color: #fff; }
+.btn-send:hover { background: #357abd; }
+.stages { margin-bottom: 16px; }
+.stage { display: inline-block; padding: 4px 12px; margin: 0 4px 8px 0; background: #e8f0fe; border-radius: 12px; font-size: 13px; color: #1a73e8; }
+.error { color: #d93025; margin-bottom: 12px; font-size: 14px; }
+.table-wrap { overflow-x: auto; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { background: #f8f9fa; padding: 10px 12px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #e0e0e0; white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 1px solid #eee; color: #333; }
+tr:hover td { background: #f5f8ff; }
+.toolbar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+.btn-export { padding: 8px 20px; font-size: 14px; border: 1px solid #34a853; border-radius: 6px; cursor: pointer; background: #fff; color: #34a853; display: none; }
+.btn-export:hover { background: #34a853; color: #fff; }
+.row-count { font-size: 13px; color: #888; display: none; }
+.status { font-size: 14px; color: #666; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Data Agent</h1>
+  <div class="input-bar">
+    <input id="queryInput" type="text" placeholder="输入查询问题，例如：去年销量多少" onkeydown="if(event.key==='Enter') send()">
+    <button class="btn-send" onclick="send()">发送</button>
+  </div>
+  <div id="status" class="status"></div>
+  <div id="stages" class="stages"></div>
+  <div id="error" class="error"></div>
+  <div class="toolbar">
+    <button class="btn-export" id="exportBtn" onclick="exportExcel()">导出 Excel</button>
+    <span class="row-count" id="rowCount"></span>
+  </div>
+  <div class="table-wrap">
+    <table id="resultTable">
+      <thead id="tableHead"></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let currentData = [];
+
+async function send() {
+  const q = document.getElementById('queryInput').value.trim();
+  if (!q) return;
+  resetUI();
+  setStatus('查询中...');
+
+  try {
+    const res = await fetch('/api/query', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: q})
+    });
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let resultChunk = null;
+
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, {stream: true});
+      const lines = buf.split('\n');
+      buf = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = JSON.parse(line.slice(6));
+        if (data.stage) addStage(data.stage);
+        if (data.error) showError(data.error);
+        if (data.result) resultChunk = data.result;
+      }
+    }
+    if (resultChunk) renderTable(resultChunk);
+    else if (!document.querySelector('.error').textContent) setStatus('查询完成，无数据');
+    else setStatus('');
+  } catch (e) {
+    showError(e.message);
+    setStatus('');
+  }
+}
+
+function renderTable(data) {
+  if (!Array.isArray(data) || data.length === 0) {
+    setStatus('查询完成，无数据');
+    return;
+  }
+  currentData = data;
+  const headers = Object.keys(data[0]);
+  const thead = document.getElementById('tableHead');
+  const tbody = document.getElementById('tableBody');
+  thead.innerHTML = '<tr>' + headers.map(h => '<th>' + esc(h) + '</th>').join('') + '</tr>';
+  tbody.innerHTML = data.map(row =>
+    '<tr>' + headers.map(h => '<td>' + esc(formatCell(row[h])) + '</td>').join('') + '</tr>'
+  ).join('');
+
+  document.getElementById('exportBtn').style.display = 'inline-block';
+  document.getElementById('rowCount').style.display = 'inline';
+  document.getElementById('rowCount').textContent = `共 ${data.length} 行`;
+  setStatus('查询完成');
+}
+
+function exportExcel() {
+  if (currentData.length === 0) return;
+  const filename = document.getElementById('queryInput').value.trim().slice(0, 30);
+  fetch('/api/export', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({data: currentData, filename})
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('导出失败');
+    return res.blob();
+  })
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename + '.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  })
+  .catch(e => showError(e.message));
+}
+
+function addStage(s) { document.getElementById('stages').innerHTML += '<span class="stage">' + esc(s) + '</span>'; }
+function showError(e) { document.getElementById('error').textContent = e; }
+function setStatus(s) { document.getElementById('status').textContent = s; }
+function resetUI() {
+  document.getElementById('stages').innerHTML = '';
+  document.getElementById('error').textContent = '';
+  document.getElementById('tableHead').innerHTML = '';
+  document.getElementById('tableBody').innerHTML = '';
+  document.getElementById('exportBtn').style.display = 'none';
+  document.getElementById('rowCount').style.display = 'none';
+  currentData = [];
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatCell(v) { return v == null ? '' : v; }
+</script>
+</body>
+</html>
