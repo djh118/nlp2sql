@@ -6,7 +6,7 @@ from app.agent.context import DataAgentContext
 from app.agent.llm import llm, invoke_llm_with_fallback
 from app.agent.state import DataAgentState
 from app.core.fault_tolerance.circuit_breaker import get_circuit_breaker, CircuitBreakerConfig
-from app.core.fault_tolerance.sql_guard import guard_sql
+from app.core.fault_tolerance.sql_guard import guard_sql, sanitize_sql
 from app.core.logging import logger
 from app.prompt.prompt_loader import load_prompt
 from app.config.app_config import app_config
@@ -31,6 +31,7 @@ async def generate_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]
         sql = await cb.call(
             _do_generate_sql, table_infos, metric_infos, date_info, db_info, query
         )
+        sql = sanitize_sql(sql)
 
         is_safe, guard_msg = guard_sql(
             sql,
@@ -40,7 +41,7 @@ async def generate_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]
         if not is_safe:
             logger.warning(f"SQL被拦截: {guard_msg}")
             writer({"stage": "SQL安全拦截"})
-            return {"sql": "", "error": guard_msg}
+            return {"sql": "", "error": guard_msg, "error_category": "sql_guard"}
 
         logger.info(f"生成SQL: {sql}")
         return {"sql": sql}

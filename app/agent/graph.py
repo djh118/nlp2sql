@@ -46,6 +46,10 @@ _INTENT_ROUTING = {
 def _decide_sql_next(state: DataAgentState) -> str:
     if state.get("error") is None:
         return "execute_sql"
+    if not state.get("sql") or not state["sql"].strip():
+        return END
+    if state.get("error_category") == "sql_guard":
+        return END
     max_retry = app_config.fault_tolerance.sql_guard.max_retry_count
     if state.get("sql_retry_count", 0) >= max_retry:
         return END

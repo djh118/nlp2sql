@@ -2,6 +2,7 @@ from langgraph.runtime import Runtime
 
 from app.agent.context import DataAgentContext
 from app.agent.state import DataAgentState
+from app.core.fault_tolerance.sql_guard import sanitize_sql
 from app.core.logging import logger
 from app.repositories.mysql.dw_mysql_repository import DWMySQLRepository
 
@@ -9,7 +10,13 @@ from app.repositories.mysql.dw_mysql_repository import DWMySQLRepository
 async def validate_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]):
     writer = runtime.stream_writer
     writer({"stage": "验证SQL语句"})
-    sql = state["sql"]
+    sql = sanitize_sql(state["sql"])
+
+    if not sql or not sql.strip():
+        existing_error = state.get("error", "SQL 为空，跳过校验")
+        logger.warning(f"SQL为空，跳过校验: {existing_error}")
+        return {"error": existing_error}
+
     dw_mysql_repository: DWMySQLRepository = runtime.context['dw_mysql_repository']
 
     try:

@@ -53,12 +53,21 @@ def _report_guard(reason: str, sql: str):
 def _has_no_where(sql: str) -> bool:
     parts = sql.lower().split()
     has_from = False
+    from_idx = -1
     for i, token in enumerate(parts):
         if token == "from":
             has_from = True
+            from_idx = i
         if token == "where":
             return False
-    return has_from
+    if not has_from:
+        return False
+    from_portion = " ".join(parts[from_idx:])
+    join_count = len(re.findall(r"\bjoin\b", from_portion))
+    on_count = len(re.findall(r"\bon\b", from_portion))
+    if join_count > 0 and join_count == on_count:
+        return False
+    return True
 
 
 def _is_cartesian_product(sql: str) -> bool:
@@ -68,7 +77,9 @@ def _is_cartesian_product(sql: str) -> bool:
         return False
     from_clause = lower[from_idx:]
     where_idx = from_clause.find("where")
-    from_part = from_clause[:where_idx] if where_idx != -1 else from_clause
+    if where_idx != -1:
+        return False
+    from_part = from_clause
 
     tables = [t.strip() for t in from_part.replace("from", "").split(",")]
     tables = [t for t in tables if t and not t.isspace()]
@@ -78,8 +89,6 @@ def _is_cartesian_product(sql: str) -> bool:
     join_count = len(re.findall(r"\bjoin\b", from_part))
     if join_count > 0:
         on_count = len(re.findall(r"\bon\b", from_part))
-        if where_idx != -1:
-            on_count += len(re.findall(r"\bon\b", from_clause[where_idx:]))
         if join_count > on_count:
             return True
 

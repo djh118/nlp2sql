@@ -44,35 +44,6 @@ services:
       MAX_BATCH_TOKENS: "16384"
     volumes:
       - ./embedding/bge-large-zh-v1.5:/models/bge-large-zh-v1.5
-
-  langfuse-postgres:
-    image: postgres:15
-    container_name: langfuse-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: langfuse
-      POSTGRES_PASSWORD: langfuse
-      POSTGRES_DB: langfuse
-    volumes:
-      - langfuse_postgres_data:/var/lib/postgresql/data
-
-  langfuse:
-    image: langfuse/langfuse:2
-    container_name: langfuse
-    restart: unless-stopped
-    depends_on:
-      - langfuse-postgres
-    ports:
-      - "3000:3000"
-    environment:
-      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-postgres:5432/langfuse
-      NEXTAUTH_SECRET: VVKlx89LOIuwG0qU5s2zWO7_47JyF9sC-ees2EkrZrI
-      SALT: oRI6rinD95cJvhGxiPy1-A
-      ENCRYPTION_KEY: 681e916f633b6be02a0fc192d547b70bcfba3ebe604a1487b1c85aa58b8be5be
-      NEXTAUTH_URL: http://localhost:3000
-      TELEMETRY_ENABLED: "false"
-
 volumes:
   es_data:
   qdrant_data:
-  langfuse_postgres_data:
