@@ -41,7 +41,8 @@ es:
 
 
 llm:
-  model_name: deepseek-reasoner
+  model_name: deepseek-chat
+  sql_model_name: deepseek-reasoner
   api_key: sk-87d6425e08a444b09c4dcd032d1c5467
 
 langfuse:

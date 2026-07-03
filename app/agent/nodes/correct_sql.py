@@ -3,7 +3,7 @@ from langchain_core.prompts import PromptTemplate
 from langgraph.runtime import Runtime
 
 from app.agent.context import DataAgentContext
-from app.agent.llm import invoke_llm_with_fallback
+from app.agent.llm import invoke_sql_llm_with_fallback
 from app.agent.state import DataAgentState
 from app.core.logging import logger
 from app.prompt.prompt_loader import load_prompt
@@ -41,7 +41,7 @@ async def correct_sql(state: DataAgentState, runtime: Runtime[DataAgentContext])
                 "metric_infos", "date_info", "db_info",
             ],
         )
-        result = await invoke_llm_with_fallback(
+        result = await invoke_sql_llm_with_fallback(
             prompt,
             {
                 "query": query,

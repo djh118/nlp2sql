@@ -3,7 +3,7 @@ from langchain_core.prompts import PromptTemplate
 from langgraph.runtime import Runtime
 
 from app.agent.context import DataAgentContext
-from app.agent.llm import llm, invoke_llm_with_fallback
+from app.agent.llm import invoke_sql_llm_with_fallback
 from app.agent.state import DataAgentState
 from app.core.fault_tolerance.circuit_breaker import get_circuit_breaker, CircuitBreakerConfig
 from app.core.fault_tolerance.sql_guard import guard_sql, sanitize_sql
@@ -55,7 +55,7 @@ async def _do_generate_sql(table_infos, metric_infos, date_info, db_info, query)
         template=load_prompt("generate_sql"),
         input_variables=["table_infos", "metric_infos", "date_info", "db_info"],
     )
-    result = await invoke_llm_with_fallback(
+    result = await invoke_sql_llm_with_fallback(
         prompt,
         {
             "table_infos": table_infos,
