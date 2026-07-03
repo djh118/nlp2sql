@@ -1,4 +1,4 @@
-logging:
+﻿logging:
   file:
     enable: true
     level: INFO
@@ -49,3 +49,42 @@ langfuse:
   secret_key: "sk-lf-dcb17211-933f-425e-b87a-0f63730b736a"
   public_key: "pk-lf-c5fd8778-8e83-4765-8397-8e98facfc006"
   host: https://cloud.langfuse.com
+
+fault_tolerance:
+  retry:
+    max_retries: 2
+    base_delay: 1.0
+    max_delay: 30.0
+    backoff_factor: 2.0
+  circuit_breaker:
+    vector_retrieval:
+      failure_threshold: 5
+      recovery_timeout: 30
+    llm_call:
+      failure_threshold: 3
+      recovery_timeout: 60
+    sql_execution:
+      failure_threshold: 3
+      recovery_timeout: 30
+  llm_fallback:
+    model_name: deepseek-chat
+    backup_model_name: deepseek-chat
+  sql_guard:
+    block_select_star: true
+    block_no_where: true
+    max_retry_count: 3
+  rate_limit:
+    enabled: true
+    max_requests: 60
+    window_seconds: 60
+  cache:
+    slow_query_threshold_ms: 5000
+    max_cache_size: 100
+    cache_ttl_seconds: 300
+  query_timeout:
+    embedding: 10
+    qdrant_search: 10
+    es_search: 10
+    llm_invoke: 30
+    sql_execute: 60
+    mysql_connect: 10

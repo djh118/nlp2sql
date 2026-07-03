@@ -69,20 +69,39 @@
         <button @click="sendQuestion" :disabled="loading">
           {{ loading ? "执行中..." : "发送" }}
         </button>
+        <button class="btn-clear" @click="clearChat" :disabled="loading">新对话</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { nextTick, ref } from "vue";
+import { nextTick, onMounted, ref, watch } from "vue";
 
+const STORAGE_KEY = "chat_history";
 const API_URL = "/api/query";
 
 const question = ref("");
 const loading = ref(false);
 const messages = ref([]);
 const messagesEl = ref(null);
+
+onMounted(() => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) messages.value = JSON.parse(saved);
+  } catch {}
+  scrollToBottom();
+});
+
+watch(messages, (val) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(val));
+}, { deep: true });
+
+function clearChat() {
+  messages.value = [];
+  localStorage.removeItem(STORAGE_KEY);
+}
 
 function scrollToBottom() {
   const el = messagesEl.value;
@@ -406,6 +425,19 @@ async function sendQuestion() {
 }
 .input-box button:disabled {
   opacity: 0.5;
+}
+
+.btn-clear {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #d0d0d0;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  font-size: 14px;
+}
+.btn-clear:hover {
+  background: #f5f5f5;
 }
 
 .messages-bottom-spacer {

@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 
 from langgraph.constants import START, END
 from langgraph.graph import StateGraph
@@ -24,6 +24,7 @@ from app.clients.embedding_client import embedding_client_manager
 from app.clients.es_client import es_client_manager
 from app.clients.mysql_client import meta_client_manager, dw_client_manager
 from app.clients.qdrant_client import qdrant_client_manager
+from app.config.app_config import app_config
 from app.core.context import request_id_ctx_var
 from app.repositories.es.value_es_repository import ValueESRepository
 from app.repositories.mysql.dw_mysql_repository import DWMySQLRepository
@@ -40,6 +41,15 @@ _INTENT_ROUTING = {
     "out_of_domain": "respond_direct",
     "ddl_dml": "respond_direct",
 }
+
+
+def _decide_sql_next(state: DataAgentState) -> str:
+    if state.get("error") is None:
+        return "execute_sql"
+    max_retry = app_config.fault_tolerance.sql_guard.max_retry_count
+    if state.get("sql_retry_count", 0) >= max_retry:
+        return END
+    return "correct_sql"
 
 graph_builder.add_node("classify_intent", classify_intent)
 graph_builder.add_node("respond_direct", respond_direct)
@@ -72,10 +82,10 @@ graph_builder.add_edge("filter_table_info", "add_context")
 graph_builder.add_edge("filter_metric_info", "add_context")
 graph_builder.add_edge("add_context", "generate_sql")
 graph_builder.add_edge("generate_sql", "validate_sql")
-graph_builder.add_edge("validate_sql", "execute_sql")
-graph_builder.add_conditional_edges("validate_sql",
-                                    lambda state: "execute_sql" if state["error"] is None else "correct_sql")
+graph_builder.add_conditional_edges("validate_sql", _decide_sql_next)
+graph_builder.add_edge("correct_sql", "validate_sql")
 graph_builder.add_edge("execute_sql", END)
+
 graph = graph_builder.compile()
 
 
@@ -105,7 +115,8 @@ async def main():
             column_qdrant_repository=column_qdrant_repository,
             embedding_client=embedding_client,
             meta_mysql_repository=meta_mysql_repository,
-            dw_mysql_repository=dw_mysql_repository)
+            dw_mysql_repository=dw_mysql_repository,
+        )
 
         config = {"callbacks": [langfuse_handler]} if langfuse_handler else {}
         async for chunk in graph.astream(input=state, context=context, stream_mode="custom", config=config):

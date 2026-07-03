@@ -1,10 +1,9 @@
-from dataclasses import dataclass
+﻿from dataclasses import dataclass
 from pathlib import Path
 
 from app.config.config_loader import load_config
 
 
-# 日志配置
 @dataclass
 class File:
     enable: bool
@@ -26,7 +25,6 @@ class LoggingConfig:
     console: Console
 
 
-# 数据库配置
 @dataclass
 class DBConfig:
     host: str
@@ -72,6 +70,75 @@ class LangFuseConfig:
 
 
 @dataclass
+class RetryConfig:
+    max_retries: int
+    base_delay: float
+    max_delay: float
+    backoff_factor: float
+
+
+@dataclass
+class CircuitBreakerItem:
+    failure_threshold: int
+    recovery_timeout: int
+
+
+@dataclass
+class CircuitBreakerConfig:
+    vector_retrieval: CircuitBreakerItem
+    llm_call: CircuitBreakerItem
+    sql_execution: CircuitBreakerItem
+
+
+@dataclass
+class LLMFallbackConfig:
+    model_name: str
+    backup_model_name: str
+
+
+@dataclass
+class SQLGuardConfig:
+    block_select_star: bool
+    block_no_where: bool
+    max_retry_count: int
+
+
+@dataclass
+class RateLimitConfig:
+    enabled: bool
+    max_requests: int
+    window_seconds: int
+
+
+@dataclass
+class CacheConfig:
+    slow_query_threshold_ms: int
+    max_cache_size: int
+    cache_ttl_seconds: int
+
+
+@dataclass
+class QueryTimeoutConfig:
+    embedding: int
+    qdrant_search: int
+    es_search: int
+    llm_invoke: int
+    sql_execute: int
+    mysql_connect: int
+
+
+@dataclass
+class FaultToleranceConfig:
+    retry: RetryConfig
+    circuit_breaker: CircuitBreakerConfig
+    llm_fallback: LLMFallbackConfig
+    sql_guard: SQLGuardConfig
+    rate_limit: RateLimitConfig
+    cache: CacheConfig
+    query_timeout: QueryTimeoutConfig
+
+
+@dataclass
 class AppConfig:
     logging: LoggingConfig
     db_meta: DBConfig
@@ -81,10 +148,11 @@ class AppConfig:
     es: ESConfig
     llm: LLMConfig
     langfuse: LangFuseConfig
+    fault_tolerance: FaultToleranceConfig
 
 
-config_file = Path(__file__).parents[2] / 'conf' / 'app_config.yaml'
+config_file = Path(__file__).parents[2] / "conf" / "app_config.yaml"
 app_config: AppConfig = load_config(AppConfig, config_file)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(app_config.db_meta.port)

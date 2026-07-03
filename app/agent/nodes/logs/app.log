@@ -1,0 +1,2 @@
+2026-07-03 13:19:53.388 | INFO     | request_id - bf2cbbda-af7d-431c-96e4-1ce67a16d7b1 | app.agent.callbacks:<module>:15 - LangFuse callback handler 初始化成功
+2026-07-03 13:20:17.010 | INFO     | request_id - 525b3d93-2583-4345-b003-616a50b22642 | app.agent.callbacks:<module>:15 - LangFuse callback handler 初始化成功

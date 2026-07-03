@@ -1,10 +1,11 @@
-import json
+﻿import json
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
-from starlette.responses import StreamingResponse
 
 from app.api.deps import get_chat_service
+from app.core.context import request_id_ctx_var
+from app.core.fault_tolerance.rate_limiter import get_rate_limiter
 from app.schemas.chat import ExportSchema, QuerySchema
 from app.service.export_service import rows_to_excel
 
@@ -13,6 +14,14 @@ chat_router = APIRouter(prefix="/api")
 
 @chat_router.post("/query")
 async def date_query(query: QuerySchema, chat_service=Depends(get_chat_service)):
+    limiter = get_rate_limiter()
+    client_key = request_id_ctx_var.get("unknown")
+    if not limiter.is_allowed(client_key):
+        return JSONResponse(
+            status_code=429,
+            content={"error": "请求过于频繁，请稍后重试", "error_category": "rate_limit"},
+        )
+
     async def event_stream():
         try:
             async for chunk in chat_service.stream_chat(query.query):

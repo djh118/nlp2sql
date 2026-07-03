@@ -1,4 +1,4 @@
-from elasticsearch import AsyncElasticsearch
+﻿from elasticsearch import AsyncElasticsearch
 
 from app.config.app_config import ESConfig, app_config
 
@@ -12,7 +12,12 @@ class ESClientManager:
         return f"http://{self.config.host}:{self.config.port}"
 
     def init(self):
-        self.client = AsyncElasticsearch(hosts=[self._get_url()])
+        self.client = AsyncElasticsearch(
+            hosts=[self._get_url()],
+            request_timeout=app_config.fault_tolerance.query_timeout.es_search,
+            max_retries=1,
+            retry_on_timeout=True,
+        )
 
     async def close(self):
         await self.client.close()
