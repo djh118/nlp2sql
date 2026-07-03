@@ -1,4 +1,4 @@
-﻿logging:
+logging:
   file:
     enable: true
     level: INFO
@@ -13,14 +13,14 @@ db_meta:
   host: localhost
   port: 3306
   user: root
-  password: 1234
+  password: YOUR_PASSWORD
   database: meta
 
 db_dw:
   host: localhost
   port: 3306
   user: root
-  password: 1234
+  password: YOUR_PASSWORD
   database: dw
 
 qdrant:
@@ -33,26 +33,24 @@ embedding:
   port: 8081
   model: BAAI/bge-large-zh-v1.5
 
-
 es:
   host: localhost
   port: 9200
   index_name: data_agent
 
-
 feishu:
-  app_id: "cli_aacdcfaec83a9bd8"
-  app_secret: "DRbg1SF3r90xN4elo9kvBhMlOdHzsY5B"
+  app_id: "YOUR_FEISHU_APP_ID"
+  app_secret: "YOUR_FEISHU_APP_SECRET"
 
 llm:
   model_name: deepseek-v4-flash
   sql_model_name: deepseek-v4-flash
-  api_key: sk-87d6425e08a444b09c4dcd032d1c5467
+  api_key: YOUR_DEEPSEEK_API_KEY
 
 langfuse:
   enabled: true
-  secret_key: "sk-lf-dcb17211-933f-425e-b87a-0f63730b736a"
-  public_key: "pk-lf-c5fd8778-8e83-4765-8397-8e98facfc006"
+  secret_key: "YOUR_LANGFUSE_SECRET_KEY"
+  public_key: "YOUR_LANGFUSE_PUBLIC_KEY"
   host: https://cloud.langfuse.com
 
 fault_tolerance:
