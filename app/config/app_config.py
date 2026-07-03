@@ -56,6 +56,12 @@ class ESConfig:
 
 
 @dataclass
+class FeishuConfig:
+    app_id: str
+    app_secret: str
+
+
+@dataclass
 class LLMConfig:
     model_name: str
     sql_model_name: str
@@ -147,6 +153,7 @@ class AppConfig:
     qdrant: QdrantConfig
     embedding: EmbeddingConfig
     es: ESConfig
+    feishu: FeishuConfig
     llm: LLMConfig
     langfuse: LangFuseConfig
     fault_tolerance: FaultToleranceConfig

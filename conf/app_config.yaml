@@ -40,6 +40,10 @@ es:
   index_name: data_agent
 
 
+feishu:
+  app_id: "cli_aacdcfaec83a9bd8"
+  app_secret: "DRbg1SF3r90xN4elo9kvBhMlOdHzsY5B"
+
 llm:
   model_name: deepseek-v4-flash
   sql_model_name: deepseek-v4-flash

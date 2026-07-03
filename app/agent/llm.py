@@ -16,7 +16,7 @@ llm = init_chat_model(
 )
 sql_llm = init_chat_model(
     model=sql_model_name, model_provider="deepseek", api_key=api_key, temperature=0,
-    model_kwargs={"thinking": {"type": "enabled"}, "reasoning_effort": "high"},
+    extra_body={"thinking": {"type": "enabled"}},
 )
 backup_llm = init_chat_model(
     model=app_config.fault_tolerance.llm_fallback.backup_model_name,
