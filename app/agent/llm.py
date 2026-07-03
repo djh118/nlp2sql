@@ -11,10 +11,16 @@ model_name = app_config.llm.model_name
 sql_model_name = app_config.llm.sql_model_name
 api_key = app_config.llm.api_key
 
-llm = init_chat_model(model=model_name, api_key=api_key, temperature=0)
-sql_llm = init_chat_model(model=sql_model_name, api_key=api_key, temperature=0)
+llm = init_chat_model(
+    model=model_name, model_provider="deepseek", api_key=api_key, temperature=0,
+)
+sql_llm = init_chat_model(
+    model=sql_model_name, model_provider="deepseek", api_key=api_key, temperature=0,
+    model_kwargs={"thinking": {"type": "enabled"}, "reasoning_effort": "high"},
+)
 backup_llm = init_chat_model(
     model=app_config.fault_tolerance.llm_fallback.backup_model_name,
+    model_provider="deepseek",
     api_key=api_key,
     temperature=0,
 )

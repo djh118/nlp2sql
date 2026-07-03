@@ -41,8 +41,8 @@ es:
 
 
 llm:
-  model_name: deepseek-chat
-  sql_model_name: deepseek-reasoner
+  model_name: deepseek-v4-flash
+  sql_model_name: deepseek-v4-flash
   api_key: sk-87d6425e08a444b09c4dcd032d1c5467
 
 langfuse:
@@ -68,8 +68,8 @@ fault_tolerance:
       failure_threshold: 3
       recovery_timeout: 30
   llm_fallback:
-    model_name: deepseek-chat
-    backup_model_name: deepseek-chat
+    model_name: deepseek-v4-flash
+    backup_model_name: deepseek-v4-flash
   sql_guard:
     block_select_star: true
     block_no_where: true
